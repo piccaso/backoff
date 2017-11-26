@@ -1,12 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"github.com/piccaso/backoff/command"
 	"os"
-	"os/exec"
 	"time"
-	"context"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 
 	flag.Parse()
 	args := flag.Args()
-	fmt.Fprintf(flagOut, "eol:%vsec\n", *duration+((*increment)*(*max)))
+	//fmt.Fprintf(flagOut, "eol:%vsec\n", *duration+((*increment)*(*max)))
 
 	if len(args) < 1 {
 		flag.Usage()
@@ -34,10 +34,13 @@ func main() {
 	sleepTime := *duration
 	failCnt := 0
 	for {
-		cmd,ctx := setupCommand(args)
+		cmd, ctx, err := command.NewCommandWithContext(context.Background(), args)
+		if err != nil {
+			panic(err)
+		}
 
 		func() {
-			cancel,_ := context.WithCancel(ctx)
+			cancel, _ := context.WithCancel(ctx)
 			defer cancel.Done()
 
 			start := time.Now()
@@ -72,20 +75,4 @@ func main() {
 		time.Sleep(time.Second * time.Duration(sleepTime))
 	}
 
-}
-
-func setupCommand(args []string) (*exec.Cmd, context.Context) {
-	argsLen := len(args)
-	ctx := context.Background()
-	var cmd *exec.Cmd
-	if argsLen == 1 {
-		cmd = exec.CommandContext(ctx, args[0])
-	} else {
-		cmd = exec.CommandContext(ctx, args[0], args[1:]...)
-	}
-
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd, ctx
 }
