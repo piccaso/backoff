@@ -51,9 +51,16 @@ func main() {
 			if elapsed > *reset {
 				sleepTime = *duration
 				failCnt = 0
+
+				fmt.Fprint(flagOut, "reset\n")
 			} else {
+
+				if failCnt > 0 {
+					sleepTime += *increment
+				}
 				failCnt++
-				sleepTime += *increment
+
+				fmt.Fprintf(flagOut, "failed, incremented sleepTime: %v, failCnt: %v\n", sleepTime, failCnt)
 			}
 			if failCnt > *max {
 				fmt.Fprintf(flagOut, "max retries reached: %v\n", failCnt)
